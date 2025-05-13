@@ -1,17 +1,83 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-br">
 <head>
-  <title>Análise de Nomes</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Análise de Nomes - IBGE</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    h1, h2 {
+      color: #333;
+    }
+    input {
+      margin: 10px;
+      padding: 8px;
+      font-size: 14px;
+    }
+    button {
+      padding: 8px 16px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    canvas {
+      margin-top: 20px;
+    }
+    table {
+      margin-top: 20px;
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 8px 12px;
+      text-align: left;
+      border: 1px solid #ddd;
+    }
+  </style>
 </head>
 <body>
-  <h2>Comparar Nomes</h2>
-  <input id="n1" placeholder="Nome 1" />
-  <input id="n2" placeholder="Nome 2" />
-  <button onclick="comparar()">Comparar</button>
-  <canvas id="grafico"></canvas>
+  <h1>Análise de Tendência de Nomes - IBGE</h1>
+
+  <!-- Comparação de Nomes -->
+  <section>
+    <h2>Comparar Nomes</h2>
+    <input id="n1" placeholder="Nome 1" />
+    <input id="n2" placeholder="Nome 2" />
+    <button onclick="comparar()">Comparar</button>
+    <canvas id="graficoComparacao"></canvas>
+  </section>
+
+  <!-- Evolução de um Nome -->
+  <section>
+    <h2>Evolução do Nome</h2>
+    <input id="nome" placeholder="Digite um nome" />
+    <input id="inicio" type="number" placeholder="Início da década" />
+    <input id="fim" type="number" placeholder="Fim da década" />
+    <button onclick="buscarEvolucao()">Buscar Evolução</button>
+    <canvas id="graficoEvolucao"></canvas>
+  </section>
+
+  <!-- Top 3 Nomes por Localidade -->
+  <section>
+    <h2>Top 3 Nomes por Localidade</h2>
+    <input id="localidade" placeholder="Digite a localidade (UF ou Município)" />
+    <button onclick="buscarTopNomes()">Buscar Top 3</button>
+    <table id="tabelaLocalidade">
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>Frequência</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </section>
 
   <script>
+    // Comparar dois nomes
     async function comparar() {
       const n1 = document.getElementById('n1').value;
       const n2 = document.getElementById('n2').value;
@@ -22,17 +88,59 @@
       const freq1 = data.map(d => d.name1);
       const freq2 = data.map(d => d.name2);
 
-      new Chart(document.getElementById('grafico'), {
+      new Chart(document.getElementById('graficoComparacao'), {
         type: 'line',
         data: {
           labels,
           datasets: [
-            { label: n1, data: freq1, borderColor: 'blue' },
-            { label: n2, data: freq2, borderColor: 'green' }
+            { label: n1, data: freq1, borderColor: 'blue', fill: false },
+            { label: n2, data: freq2, borderColor: 'green', fill: false }
           ]
         }
       });
     }
+
+    // Evolução de um nome
+    async function buscarEvolucao() {
+      const nome = document.getElementById('nome').value;
+      const inicio = document.getElementById('inicio').value;
+      const fim = document.getElementById('fim').value;
+      const resp = await fetch(`/names/evolucao?name=${nome}&start=${inicio}&end=${fim}`);
+      const data = await resp.json();
+
+      const labels = data.map(d => d.decade);
+      const freq = data.map(d => d.frequency);
+
+      new Chart(document.getElementById('graficoEvolucao'), {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            label: `Evolução de ${nome}`,
+            data: freq,
+            borderColor: 'blue',
+            fill: false
+          }]
+        }
+      });
+    }
+
+    // Top 3 nomes por localidade
+    async function buscarTopNomes() {
+      const localidade = document.getElementById('localidade').value;
+      const resp = await fetch(`/names/localidade?uf=${localidade}`);
+      const data = await resp.json();
+
+      const tabela = document.getElementById('tabelaLocalidade').getElementsByTagName('tbody')[0];
+      tabela.innerHTML = ''; // Limpa a tabela antes de inserir os novos dados
+
+      data.forEach(nome => {
+        const row = tabela.insertRow();
+        row.insertCell(0).innerText = nome.name;
+        row.insertCell(1).innerText = nome.frequency;
+      });
+    }
   </script>
+
 </body>
 </html>
