@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Análise de Nomes</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <h2>Comparar Nomes</h2>
+  <input id="n1" placeholder="Nome 1" />
+  <input id="n2" placeholder="Nome 2" />
+  <button onclick="comparar()">Comparar</button>
+  <canvas id="grafico"></canvas>
+
+  <script>
+    async function comparar() {
+      const n1 = document.getElementById('n1').value;
+      const n2 = document.getElementById('n2').value;
+      const resp = await fetch(`/names/comparar?name1=${n1}&name2=${n2}`);
+      const data = await resp.json();
+
+      const labels = data.map(d => d.decade);
+      const freq1 = data.map(d => d.name1);
+      const freq2 = data.map(d => d.name2);
+
+      new Chart(document.getElementById('grafico'), {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            { label: n1, data: freq1, borderColor: 'blue' },
+            { label: n2, data: freq2, borderColor: 'green' }
+          ]
+        }
+      });
+    }
+  </script>
+</body>
+</html>
